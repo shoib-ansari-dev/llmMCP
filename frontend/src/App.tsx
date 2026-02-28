@@ -57,7 +57,7 @@ function App() {
               Document Analysis Agent
             </h1>
           </div>
-          <p className="text-sm text-gray-500">Powered by Claude AI</p>
+          <p className="text-sm text-gray-500">Powered by OpenAI</p>
         </div>
       </header>
 
