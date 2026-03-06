@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+// Get API URL from environment variable or use default
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const api = axios.create({
@@ -7,7 +8,20 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Include credentials for same-site requests
 });
+
+// Add auth token to requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('access_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Export the api instance as apiClient for consistency
+export const apiClient = api;
 
 export interface Document {
   id: string;

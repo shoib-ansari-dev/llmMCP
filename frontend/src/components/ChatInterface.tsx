@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User } from 'lucide-react';
+import { Send, Bot, User, AlertCircle } from 'lucide-react';
 import { askQuestion } from '../api/client';
+import { validateQuestion, sanitizeString } from '../utils/validation';
 
 interface Message {
   id: string;
@@ -17,6 +18,7 @@ export function ChatInterface({ selectedDocumentId }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -27,22 +29,40 @@ export function ChatInterface({ selectedDocumentId }: ChatInterfaceProps) {
     scrollToBottom();
   }, [messages]);
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+    if (validationError) {
+      setValidationError(null);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
+    // Validate question
+    const validation = validateQuestion(input);
+    if (!validation.isValid) {
+      setValidationError(validation.errors[0]);
+      return;
+    }
+
+    // Sanitize input
+    const sanitizedInput = sanitizeString(input, 1000);
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input,
+      content: sanitizedInput,
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
+    setValidationError(null);
     setIsLoading(true);
 
     try {
-      const response = await askQuestion(input, selectedDocumentId);
+      const response = await askQuestion(sanitizedInput, selectedDocumentId);
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -50,11 +70,14 @@ export function ChatInterface({ selectedDocumentId }: ChatInterfaceProps) {
         sources: response.sources,
       };
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch (err) {
+    } catch (err: any) {
+      const errorContent = err?.response?.data?.detail?.message
+        || err?.response?.data?.detail
+        || 'Sorry, I encountered an error processing your question. Please try again.';
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'Sorry, I encountered an error processing your question. Please try again.',
+        content: errorContent,
       };
       setMessages((prev) => [...prev, errorMessage]);
       console.error(err);
@@ -136,10 +159,15 @@ export function ChatInterface({ selectedDocumentId }: ChatInterfaceProps) {
           <input
             type="text"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={handleInputChange}
             placeholder="Ask a question about your documents..."
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+              validationError 
+                ? 'border-red-300 focus:ring-red-500' 
+                : 'border-gray-300 focus:ring-blue-500'
+            }`}
             disabled={isLoading}
+            maxLength={1000}
           />
           <button
             type="submit"
@@ -150,6 +178,15 @@ export function ChatInterface({ selectedDocumentId }: ChatInterfaceProps) {
             Send
           </button>
         </div>
+        {validationError && (
+          <p className="mt-2 text-sm text-red-500 flex items-center gap-1">
+            <AlertCircle className="h-4 w-4" />
+            {validationError}
+          </p>
+        )}
+        <p className="mt-1 text-xs text-gray-400 text-right">
+          {input.length}/1000
+        </p>
       </form>
     </div>
   );

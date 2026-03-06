@@ -1,8 +1,16 @@
 # Environment
 .env
+.env.local
+.env.*.local
 .venv/
 venv/
 env/
+
+# Deployment secrets (NEVER push these!)
+deployment/.env
+deployment/azure/connection-info.txt
+deployment/**/*.pem
+deployment/**/*.key
 
 # Python
 __pycache__/
