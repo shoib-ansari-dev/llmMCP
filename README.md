@@ -17,6 +17,13 @@ An intelligent document analysis system that automatically summarizes PDFs, spre
 - **Frontend:** React, TypeScript, Tailwind CSS
 - **Vector Store:** ChromaDB
 
+# Landing Page
+![Landing Page](./public/landing.png)
+# DocuBrief Landing
+![DocuBrief Landing Page](./public/docubrief-landing.png)
+# DocuBrief Working
+![DocuBrief Working](./public/docubrief-running.png)
+
 ---
 
 *This is a VibeCode application that demonstrates the full power of AI to orchestrate intelligent document analysis.*
